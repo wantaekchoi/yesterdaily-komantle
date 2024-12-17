@@ -1,16 +1,22 @@
 const Model = {
   results: [],
   recent: {},
+  lastSort: { column: "sim", direction: "desc" },
 
   loadFromStorage() {
     const savedResults = localStorage.getItem("results");
     if (savedResults) {
       this.results = JSON.parse(savedResults);
     }
+    const savedSort = localStorage.getItem("lastSort");
+    if (savedSort) {
+      this.savedSort = JSON.parse(savedSort);
+    }
   },
 
   saveToStorage() {
     localStorage.setItem("results", JSON.stringify(this.results));
+    localStorage.setItem("lastSort", JSON.stringify(this.results));
   },
 
   addResult(result) {
@@ -46,6 +52,7 @@ const View = {
     const mm = String(today.getMonth() + 1).padStart(2, "0");
     const dd = String(today.getDate()).padStart(2, "0");
     const maxDate = `${yyyy}-${mm}-${dd}`;
+
     this.dateInput.max = maxDate;
     this.dateInput.value = maxDate;
   },
@@ -57,7 +64,7 @@ const View = {
     }
 
     this.recentEntryDiv.innerHTML = `
-      <h3>가장 최근 입력:</h3>
+      <strong>가장 최근 입력:</strong>
       <p>
         <strong>단어:</strong> ${recent.word} |
         <strong>유사도:</strong> ${recent.sim.toFixed(4)} |
@@ -66,20 +73,35 @@ const View = {
   },
 
   renderTables(groupedResults) {
-    this.resultTablesDiv.innerHTML = ""; // 기존 테이블 초기화
+    this.resultTablesDiv.innerHTML = "";
 
     for (const [date, items] of Object.entries(groupedResults)) {
+      const { column, direction } = Model.lastSort;
+
+      items.sort((a, b) => {
+        let valA = a[column];
+        let valB = b[column];
+
+        if (typeof valA === "string") valA = valA.toLowerCase();
+        if (typeof valB === "string") valB = valB.toLowerCase();
+
+        if (direction === "asc") {
+          return valA > valB ? 1 : -1;
+        } else {
+          return valA < valB ? 1 : -1;
+        }
+      });
+
       const dateHeader = document.createElement("h3");
-      dateHeader.textContent = `날짜: ${date}`;
       this.resultTablesDiv.appendChild(dateHeader);
 
       const table = document.createElement("table");
       table.innerHTML = `
         <thead>
           <tr>
-            <th>#</th>
+            <th class="button" onclick="ViewModel.handleSort('${date}', 'user_index')">#</th>
             <th>단어</th>
-            <th>유사도</th>
+            <th class="button" onclick="ViewModel.handleSort('${date}', 'sim')">유사도</th>
           </tr>
         </thead>`;
 
@@ -93,7 +115,7 @@ const View = {
             <div>
               ${item.rank} (${item.sim.toFixed(4)})
             </div>
-            <progress id="file" max="1.0" value=${item.sim} /> 
+            <progress id="sim-bar" min="0.0" max="1.0" value=${item.sim} /> 
           </td>`;
         tbody.appendChild(tr);
       });
@@ -105,19 +127,17 @@ const View = {
 };
 
 const ViewModel = {
-  selectedDate: "", // 현재 선택된 날짜
+  selectedDate: "",
 
   init() {
     Model.loadFromStorage();
     View.init();
 
-    // 초기화 시 현재 날짜 설정
     this.selectedDate = View.dateInput.value;
 
     assignUserIndex();
     this.updateView();
 
-    // 이벤트 리스너 등록
     View.submitButton.addEventListener("click", () => this.handleSubmit());
     View.resetButton.addEventListener("click", () => this.handleReset());
     View.dateInput.addEventListener("change", (event) =>
@@ -131,8 +151,8 @@ const ViewModel = {
   },
 
   handleDateChange(event) {
-    this.selectedDate = event.target.value; // 선택된 날짜 업데이트
-    this.updateView(); // 뷰 갱신
+    this.selectedDate = event.target.value;
+    this.updateView();
   },
 
   handleSubmit() {
@@ -149,11 +169,8 @@ const ViewModel = {
       return;
     }
 
-    // 중복 확인
     const existingIndex = Model.findResult(inputWord, inputDate);
-
     if (existingIndex !== -1) {
-      // 중복된 경우 기존 항목 갱신
       const updatedResult = {
         ...Model.results[existingIndex],
         timestamp: Date.now(),
@@ -162,10 +179,11 @@ const ViewModel = {
 
       assignUserIndex();
       this.updateView();
+
+      View.guessInput.value = "";
       return;
     }
 
-    // API 요청
     fetch(`/api/guess/${inputWord}?date=${inputDate}`)
       .then((response) => {
         if (!response.ok) throw new Error("API 요청 실패");
@@ -186,7 +204,7 @@ const ViewModel = {
         this.updateView();
         View.guessInput.value = "";
       })
-      .catch((error) => console.error(error));
+      .catch(console.error);
   },
 
   handleReset() {
@@ -199,15 +217,43 @@ const ViewModel = {
     }
   },
 
+  handleSort(date, column) {
+    const currentSortDirection =
+      Model.lastSort.column === column && Model.lastSort.direction === "asc"
+        ? "desc"
+        : "asc";
+
+    const groupedResults = groupResultsByDate();
+    const items = groupedResults[date] || [];
+
+    items.sort((a, b) => {
+      let valA = a[column];
+      let valB = b[column];
+
+      if (typeof valA === "string") valA = valA.toLowerCase();
+      if (typeof valB === "string") valB = valB.toLowerCase();
+
+      if (currentSortDirection === "asc") {
+        return valA > valB ? 1 : -1;
+      } else {
+        return valA < valB ? 1 : -1;
+      }
+    });
+
+    Model.lastSort = { column, direction: currentSortDirection };
+    Model.saveToStorage();
+
+    View.renderTables({ [date]: items }, Model.lastSort);
+  },
+
   updateView() {
-    // 현재 선택된 날짜에 해당하는 데이터만 렌더링
     const groupedResults = groupResultsByDate();
     const filteredResults = {
       [this.selectedDate]: groupedResults[this.selectedDate] || [],
     };
 
-    View.renderRecent(Model.recent); // 최근 입력 갱신
-    View.renderTables(filteredResults); // 테이블 갱신
+    View.renderRecent(Model.recent);
+    View.renderTables(filteredResults);
   },
 };
 

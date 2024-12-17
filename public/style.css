@@ -36,8 +36,8 @@ td {
   padding-right: 1rem;
 }
 
-th button {
-  background-color: transparent;
-  border: none;
+th.button {
   cursor: pointer;
+  font-weight: bold;
+  color: blue;
 }
