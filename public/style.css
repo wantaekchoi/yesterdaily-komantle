@@ -15,29 +15,25 @@ main {
   padding: 0.5rem;
 }
 
-input[type="text"],
-input[type="date"] {
-  padding: 10px;
-}
-
-button {
-  padding: 10px;
-}
-
 table {
+  text-align: left;
   border-collapse: collapse;
 }
 
 th,
 td {
-  border: 1px solid #222222;
-  text-align: center;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 
 th.button {
   cursor: pointer;
   font-weight: bold;
   color: blue;
+}
+
+td {
+  progress {
+    vertical-align: baseline;
+  }
 }

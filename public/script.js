@@ -62,14 +62,12 @@ const View = {
       this.recentEntryDiv.innerHTML = "";
       return;
     }
-
     this.recentEntryDiv.innerHTML = `
-      <strong>가장 최근 입력:</strong>
-      <p>
-        <strong>단어:</strong> ${recent.word} |
-        <strong>유사도:</strong> ${recent.sim.toFixed(4)} |
-        <strong>순위:</strong> ${recent.rank || "없음"}
-      </p>`;
+      <div>
+        <strong>#${recent.user_index} ${recent.word}:
+        </strong> ${recent.sim.toFixed(4)} (${recent.rank || "없음"})
+        <progress min=${0.0} max=${1.0} value=${recent.sim} />
+      </div>`;
   },
 
   renderTables(groupedResults) {
@@ -102,6 +100,7 @@ const View = {
             <th class="button" onclick="ViewModel.handleSort('${date}', 'user_index')">#</th>
             <th>단어</th>
             <th class="button" onclick="ViewModel.handleSort('${date}', 'sim')">유사도</th>
+            <th />
           </tr>
         </thead>`;
 
@@ -112,10 +111,10 @@ const View = {
           <td>${item.user_index}</td>
           <td>${item.word}</td>
           <td>
-            <div>
               ${item.rank} (${item.sim.toFixed(4)})
-            </div>
-            <progress id="sim-bar" min="0.0" max="1.0" value=${item.sim} /> 
+          </td>
+          <td>
+            <progress min=${0.0} max=${1.0} value=${item.sim} /> 
           </td>`;
         tbody.appendChild(tr);
       });
