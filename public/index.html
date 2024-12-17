@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>단어 유사도 추측 게임</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+  <header>
+    <h1>단어 유사도 추측 게임</h1>
+  </header>
+  <main>
+
+    <div class="game-container">
+      <h2>단어를 입력하고 유사도를 확인하세요!</h2>
+      <div class="game-input">
+        <input type="text" id="guessInput" placeholder="단어를 입력하세요..." />
+        <input type="date" id="dateInput" />
+        <button id="submitButton">추측하기</button>
+      </div>
+      <div class="controls">
+        <button id="resetResults">리셋</button>
+      </div>
+
+
+      <div id="recentEntry"></div>
+
+      <div id="resultTables"></div>
+    </div>
+  </main>
+
+  <script src="/script.js"></script>
+</body>
+
+</html>

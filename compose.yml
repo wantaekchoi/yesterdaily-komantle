@@ -1,0 +1,17 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000" 
+    environment:
+      NODE_ENV: production 
+  
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "12345:80" 
+    volumes:
+      - ./public:/usr/share/nginx/html:ro 
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro 
